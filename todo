@@ -1,0 +1,3 @@
+parse SourceURl xml attribute
+add support for different named RssItem tags (entry)
+add tests for xml parsing function
