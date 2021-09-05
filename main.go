@@ -7,9 +7,14 @@ import (
 )
 
 func main() {
-	// err := reader.Parse("https://www.rssboard.org/files/sample-rss-092.xml")
-	err := reader.Parse("https://www.rssboard.org/files/sample-rss-2.xml")
-	if err != nil {
-		fmt.Println(err)
+	urls := []string{
+		"https://www.rssboard.org/files/sample-rss-091.xml",
+		"https://www.rssboard.org/files/sample-rss-092.xml",
+		"https://www.rssboard.org/files/sample-rss-2.xml",
 	}
+	_, errors := reader.Parse(urls)
+	if len(errors) != 0 {
+		fmt.Println(errors)
+	}
+	// fmt.Println(results)
 }

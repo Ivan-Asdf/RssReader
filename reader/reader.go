@@ -6,9 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
+
+	"golang.org/x/net/html/charset"
 )
 
+// Necessary for parsing xml
 type rawRssItem struct {
 	Title       string     `xml:"title"`
 	Source      itemSource `xml:"source"`
@@ -22,6 +26,7 @@ type itemSource struct {
 	SourceURL string `xml:"url,attr"`
 }
 
+// The final product of this package
 type RssItem struct {
 	Title       string     `json:"title"`
 	Source      string     `json:"source"`
@@ -33,10 +38,13 @@ type RssItem struct {
 
 const ITEM_TAG = "item"
 
+// Parse xml and return rss items
 func getRawRssItems(xmlReader io.ReadCloser) ([]rawRssItem, error) {
 	rssItems := make([]rawRssItem, 0)
 
 	decoder := xml.NewDecoder(xmlReader)
+	// Add ISO-8859-1 encoding support
+	decoder.CharsetReader = charset.NewReaderLabel
 	for {
 		t, err := decoder.Token()
 		if err != nil {
@@ -61,6 +69,7 @@ func getRawRssItems(xmlReader io.ReadCloser) ([]rawRssItem, error) {
 	return rssItems, nil
 }
 
+// Supported date formats. If more are needed they can be added
 func getDateFormats() []string {
 	return []string{
 		time.RFC822,
@@ -68,6 +77,7 @@ func getDateFormats() []string {
 	}
 }
 
+// Convert rawRssItems to RssItems
 func getRssItems(rawItems []rawRssItem) []RssItem {
 	rssItems := make([]RssItem, 0)
 	for _, v := range rawItems {
@@ -96,17 +106,55 @@ func printJson(object interface{}) {
 	fmt.Println(string(jsonString))
 }
 
-func Parse(url string) error {
+// Get and parse a single rss url
+func processUrl(url string, wg *sync.WaitGroup, resultChan chan<- []RssItem, errorChan chan<- error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		errorChan <- err
+		wg.Done()
+		return
 	}
-
 	rssItems, err := getRawRssItems(resp.Body)
 	if err != nil {
-		fmt.Println(err)
+		errorChan <- err
+		wg.Done()
+		return
 	}
-	printJson(getRssItems(rssItems[:2]))
+	resultChan <- getRssItems(rssItems[:2])
+	wg.Done()
+}
 
-	return nil
+// Given a slice of urls will return all RssItems extracted from them
+func Parse(urls []string) ([]RssItem, []error) {
+	resultsChan := make(chan []RssItem)
+	errorsChan := make(chan error)
+
+	var wg sync.WaitGroup
+	for _, url := range urls {
+		wg.Add(1)
+		go processUrl(url, &wg, resultsChan, errorsChan)
+	}
+
+	done := make(chan interface{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	results := make([]RssItem, 0)
+	errors := make([]error, 0)
+loop:
+	for {
+		select {
+		case rssItems := <-resultsChan:
+			results = append(results, rssItems...)
+			printJson(rssItems[:2])
+		case err := <-errorsChan:
+			errors = append(errors, err)
+		case <-done:
+			break loop
+		}
+	}
+
+	return results, errors
 }
