@@ -1,2 +1,1 @@
-add tests for xml parsing function
-store result in directory
+store result in json file

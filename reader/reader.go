@@ -22,7 +22,7 @@ type rawRssItem struct {
 }
 
 type itemSource struct {
-	XMLName   xml.Name
+	Source    string `xml:",chardata"`
 	SourceURL string `xml:"url,attr"`
 }
 
@@ -30,7 +30,7 @@ type itemSource struct {
 type RssItem struct {
 	Title       string     `json:"title"`
 	Source      string     `json:"source"`
-	SourceUrl   string     `json:"sourceUrl"`
+	SourceURL   string     `json:"sourceUrl"`
 	Link        string     `json:"link"`
 	PublishDate *time.Time `json:"pubDate"`
 	Description string     `json:"description"`
@@ -38,8 +38,8 @@ type RssItem struct {
 
 const ITEM_TAG = "item"
 
-// Parse xml and return rss items
-func getRawRssItems(xmlReader io.ReadCloser) ([]rawRssItem, error) {
+// Parse xml and return raw rss items
+func getRawRssItems(xmlReader io.Reader) ([]rawRssItem, error) {
 	rssItems := make([]rawRssItem, 0)
 
 	decoder := xml.NewDecoder(xmlReader)
@@ -83,8 +83,8 @@ func getRssItems(rawItems []rawRssItem) []RssItem {
 	for _, v := range rawItems {
 		var rssItem RssItem
 		rssItem.Title = v.Title
-		rssItem.Source = v.Source.XMLName.Local
-		rssItem.SourceUrl = v.Source.SourceURL
+		rssItem.Source = v.Source.Source
+		rssItem.SourceURL = v.Source.SourceURL
 		rssItem.Link = v.Link
 
 		for _, format := range getDateFormats() {
@@ -114,13 +114,14 @@ func processUrl(url string, wg *sync.WaitGroup, resultChan chan<- []RssItem, err
 		wg.Done()
 		return
 	}
-	rssItems, err := getRawRssItems(resp.Body)
+	defer resp.Body.Close()
+	rawRssItems, err := getRawRssItems(resp.Body)
 	if err != nil {
 		errorChan <- err
 		wg.Done()
 		return
 	}
-	resultChan <- getRssItems(rssItems[:2])
+	resultChan <- getRssItems(rawRssItems[:2])
 	wg.Done()
 }
 
