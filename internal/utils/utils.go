@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/Ivan-Asdf/RssReader/reader"
+	"github.com/Ivan-Asdf/RssReader/pkg/reader"
 )
 
 func PrintJson(rssItems []reader.RssItem) {

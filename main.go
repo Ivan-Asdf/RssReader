@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/Ivan-Asdf/RssReader/internal/utils"
-	"github.com/Ivan-Asdf/RssReader/reader"
+	"github.com/Ivan-Asdf/RssReader/pkg/reader"
 )
 
 func init() {
