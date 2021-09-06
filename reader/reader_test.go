@@ -1,38 +1,19 @@
 package reader
 
 import (
-	"strings"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const xmlData string = `
-<rss>
-	<channel>
-		<title>Something</title>
-		<blabla>dasdsadasdasdasdsa</blabla>
-		<item>
-			<title>Article1</title>
-		</item>
-		<item>
-			<title>Article2</title>
-			<source url="www.abc.com">ABC blog</source>
-			<link>www.xyz.com</link>
-			<pubDate>09 Aug 20 19:22 EET</pubDate>
-			<description>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</description>
-		</item>
-		<item>
-			<title>Article3</title>
-			<source url="www.qwe.com">QWE blog</source>
-		</item>
-	</channel>
-</rss>`
-
 func TestGetRawRssItems(t *testing.T) {
-	reader := strings.NewReader(xmlData)
+	xmlFile, err := os.Open("testdata/test.xml")
+	if err != nil {
+		t.Error(err)
+	}
 
-	rawRssItems, err := getRawRssItems(reader)
+	rawRssItems, err := getRawRssItems(xmlFile)
 	if err != nil {
 		t.Error(err)
 	}
@@ -65,8 +46,12 @@ func TestGetRawRssItems(t *testing.T) {
 }
 
 func TestGetRssItems(t *testing.T) {
-	reader := strings.NewReader(xmlData)
-	rawRssItems, err := getRawRssItems(reader)
+	xmlFile, err := os.Open("testdata/test.xml")
+	if err != nil {
+		t.Error(err)
+	}
+
+	rawRssItems, err := getRawRssItems(xmlFile)
 	if err != nil {
 		t.Error(err)
 	}
