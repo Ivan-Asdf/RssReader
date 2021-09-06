@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"os"
 
@@ -31,12 +32,32 @@ func printJson(rssItems []reader.RssItem) {
 	}
 }
 
-func main() {
-	urls := []string{
-		"https://www.rssboard.org/files/sample-rss-091.xml",
-		"https://www.rssboard.org/files/sample-rss-092.xml",
-		"https://www.rssboard.org/files/sample-rss-2.xml",
+func getInput() []string {
+	args := os.Args[1:]
+	if len(args) == 0 {
+		log.Fatal("Please specify one or more urls as arguments")
 	}
+
+	runTestUrlsFlag := flag.Bool("t", false, "If flag is specified will run use predifined test urls")
+	flag.Parse()
+	if *runTestUrlsFlag {
+		return []string{
+			"https://www.rssboard.org/files/sample-rss-091.xml",
+			"https://www.rssboard.org/files/sample-rss-092.xml",
+			"https://www.rssboard.org/files/sample-rss-2.xml",
+		}
+	} else {
+		return args
+	}
+}
+
+func init() {
+	log.SetFlags(0)
+}
+
+func main() {
+	urls := getInput()
+
 	results, errors := reader.Parse(urls)
 	if len(errors) != 0 {
 		log.Println(errors)
