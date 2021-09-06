@@ -1,9 +1,7 @@
 package reader
 
 import (
-	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -101,11 +99,6 @@ func getRssItems(rawItems []rawRssItem) []RssItem {
 	return rssItems
 }
 
-func printJson(object interface{}) {
-	jsonString, _ := json.MarshalIndent(object, "", "  ")
-	fmt.Println(string(jsonString))
-}
-
 // Get and parse a single rss url
 func processUrl(url string, wg *sync.WaitGroup, resultChan chan<- []RssItem, errorChan chan<- error) {
 	resp, err := http.Get(url)
@@ -121,7 +114,7 @@ func processUrl(url string, wg *sync.WaitGroup, resultChan chan<- []RssItem, err
 		wg.Done()
 		return
 	}
-	resultChan <- getRssItems(rawRssItems[:2])
+	resultChan <- getRssItems(rawRssItems)
 	wg.Done()
 }
 
@@ -149,7 +142,6 @@ loop:
 		select {
 		case rssItems := <-resultsChan:
 			results = append(results, rssItems...)
-			printJson(rssItems[:2])
 		case err := <-errorsChan:
 			errors = append(errors, err)
 		case <-done:
